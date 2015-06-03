@@ -16,3 +16,7 @@ and static initializers are available.
 
 [features]
 no_std = []
+
+[dependencies.core]
+git = "https://github.com/ryanra/rust.git"
+branch = "rustos-nightly"
