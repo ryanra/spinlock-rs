@@ -87,8 +87,8 @@ use core::ops::{Drop, Deref, DerefMut};
 /// ```
 pub struct Mutex<T>
 {
-    lock: AtomicBool,
-    data: UnsafeCell<T>,
+    pub lock: AtomicBool,
+    pub data: UnsafeCell<T>,
 }
 
 /// A guard to which the protected data can be accessed
