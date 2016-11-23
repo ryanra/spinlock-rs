@@ -159,14 +159,14 @@ impl<T> Mutex<T>
 
 impl<T: ?Sized> Mutex<T>
 {
-    fn obtain_lock(&self)
+    fn obtain_lock(&self, while_taken: &Fn() -> ())
     {
         while self.lock.compare_and_swap(false, true, Ordering::Acquire) != false
         {
             // Wait until the lock looks unlocked before retrying
             while self.lock.load(Ordering::Relaxed)
             {
-                cpu_relax();
+                while_taken();
             }
         }
     }
@@ -188,7 +188,24 @@ impl<T: ?Sized> Mutex<T>
     /// ```
     pub fn lock(&self) -> MutexGuard<T>
     {
-        self.obtain_lock();
+        self.lock_and_do(&cpu_relax)
+    }
+
+    /// Same as `lock` but runs the function while the lock is taken.
+    ///
+    /// ```
+    /// let mylock = spin::Mutex::new(0);
+    /// {
+    ///     let mut data = mylock.lock_and_do(&|| println!("I'm locked!"));
+    ///     // The lock is now locked and the data can be accessed
+    ///     *data += 1;
+    ///     // The lock is implicitly dropped
+    /// }
+    ///
+    /// ```
+    pub fn lock_and_do(&self, while_taken: &Fn() -> ()) -> MutexGuard<T>
+    {
+        self.obtain_lock(while_taken);
         MutexGuard
         {
             lock: &self.lock,
